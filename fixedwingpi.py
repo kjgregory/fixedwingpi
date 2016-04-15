@@ -2,7 +2,9 @@ from sense_hat import SenseHat
 import curses
 import math
 from datetime import datetime as dt
-import multiprocessing import Process
+from multiprocessing import Process
+
+from acstools import acstools as acs
 
 LABCOL = 3
 DATCOL = 23
@@ -14,9 +16,9 @@ LABCOL2 = 53
 DATACOL4 = 63
 
 def update_data(lasttime):
-    time = dt.now()
-    scr.addstr(2,DATCOL,str(time))
-    delay = (time - lasttime).total_seconds()
+    acsdata = acs.acspacket(sense)
+    scr.addstr(2,DATCOL,str(acsdata.time))
+    delay = (acsdata.time - lasttime).total_seconds()
     if delay >= .1:
         color = 5
     elif delay >= .08:
@@ -24,39 +26,31 @@ def update_data(lasttime):
     else:
         color = 3
     scr.addstr(3,DATCOL,str(delay),curses.color_pair(color))
-    scr.addnstr(4,DATCOL,str(sense.get_humidity()),8)
-    scr.addnstr(5,DATCOL,str(sense.get_pressure()),8)
-    scr.addnstr(6,DATCOL,str(sense.get_temperature()),8)
-    scr.addnstr(7,DATCOL,str(sense.get_temperature_from_pressure()),8)
-    sense.set_imu_config(True, True, True)
-    attitude = sense.get_orientation_degrees()
-    scr.addnstr(8,DATCOL,str(attitude['pitch']),8)
-    scr.addnstr(9,DATCOL,str(attitude['yaw']),8)
-    scr.addnstr(10,DATCOL,str(attitude['roll']),8)
-    compass = sense.get_compass_raw()
-    scr.addnstr(11,DATCOL,str(compass['x']),8)
-    scr.addnstr(11,DATCOL2,str(compass['y']),8)
-    scr.addnstr(11,DATCOL3,str(compass['z']),8)
-    gyro = sense.get_gyroscope_raw()
-    scr.addnstr(12,DATCOL,str(gyro['x']),8)
-    scr.addnstr(12,DATCOL2,str(gyro['y']),8)
-    scr.addnstr(12,DATCOL3,str(gyro['z']),8)
-    accel = sense.get_accelerometer_raw()
-    scr.addnstr(13,DATCOL,str(accel['x']),8)
-    scr.addnstr(13,DATCOL2,str(accel['y']),8)
-    scr.addnstr(13,DATCOL3,str(accel['z']),8)
-    accelmag = math.sqrt(accel['x']**2 + accel['y']**2 + accel['z']**2)
+    scr.addnstr(4,DATCOL,str(acsdata.humidity),8)
+    scr.addnstr(5,DATCOL,str(acsdata.pressure),8)
+    scr.addnstr(6,DATCOL,str(acsdata.temperature1),8)
+    scr.addnstr(7,DATCOL,str(acsdata.temperature2),8)
+    scr.addnstr(8,DATCOL,str(acsdata.compass['x']),8)
+    scr.addnstr(8,DATCOL2,str(acsdata.compass['y']),8)
+    scr.addnstr(8,DATCOL3,str(acsdata.compass['z']),8)
+    scr.addnstr(9,DATCOL,str(acsdata.gyroscope['x']),8)
+    scr.addnstr(9,DATCOL2,str(acsdata.gyroscope['y']),8)
+    scr.addnstr(9,DATCOL3,str(acsdata.gyroscope['z']),8)
+    scr.addnstr(10,DATCOL,str(acsdata.accelerometer['x']),8)
+    scr.addnstr(10,DATCOL2,str(acsdata.accelerometer['y']),8)
+    scr.addnstr(10,DATCOL3,str(acsdata.accelerometer['z']),8)
+    accelmag = math.sqrt(acsdata.accelerometer['x']**2 + acsdata.accelerometer['y']**2 + acsdata.accelerometer['z']**2)
     if accelmag > 3:
         color = 5
     elif accelmag > 2:
 	color = 4
     else:
         color = 3
-    scr.addnstr(13,DATACOL4,str(accelmag),8,curses.color_pair(color))
+    scr.addnstr(10,DATACOL4,str(accelmag),8,curses.color_pair(color))
     curses.curs_set(0)
     scr.refresh()
 
-    return time
+    return acsdata.time
 
 def update_leds():
     time = dt.now()
@@ -107,16 +101,10 @@ try:
     scr.addstr(6,UNITCOL,"C",curses.color_pair(2))
     scr.addstr(7,LABCOL,"Temperature(P):",curses.color_pair(2))
     scr.addstr(7,UNITCOL,"C",curses.color_pair(2))
-    scr.addstr(8,LABCOL,"Pitch:",curses.color_pair(2))
-    scr.addstr(8,UNITCOL,"deg",curses.color_pair(2))
-    scr.addstr(9,LABCOL,"Yaw:",curses.color_pair(2))
-    scr.addstr(9,UNITCOL,"deg",curses.color_pair(2))
-    scr.addstr(10,LABCOL,"Roll:",curses.color_pair(2))
-    scr.addstr(10,UNITCOL,"deg",curses.color_pair(2))
-    scr.addstr(11,LABCOL,"Compass Raw:",curses.color_pair(2))
-    scr.addstr(12,LABCOL,"Gyro Raw:",curses.color_pair(2))
-    scr.addstr(13,LABCOL,"Accel Raw:",curses.color_pair(2))
-    scr.addstr(13,LABCOL2,"Magn.:",curses.color_pair(2))
+    scr.addstr(8,LABCOL,"Compass Raw:",curses.color_pair(2))
+    scr.addstr(9,LABCOL,"Gyro Raw:",curses.color_pair(2))
+    scr.addstr(10,LABCOL,"Accel Raw:",curses.color_pair(2))
+    scr.addstr(10,LABCOL2,"Magn.:",curses.color_pair(2))
 
     lasttime = dt.now()
     starttime = lasttime
