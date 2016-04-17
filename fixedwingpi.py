@@ -3,6 +3,7 @@ import curses
 import math
 from datetime import datetime as dt
 from multiprocessing import Process
+import gps
 
 from acstools import acstools as acs
 
@@ -16,7 +17,7 @@ LABCOL2 = 53
 DATACOL4 = 63
 
 def update_data(lasttime):
-    acsdata = acs.acspacket(sense)
+    acsdata = acs.acspacket(sense, gpsrec)
     scr.addstr(2,DATCOL,str(acsdata.time))
     delay = (acsdata.time - lasttime).total_seconds()
     if delay >= .1:
@@ -26,19 +27,22 @@ def update_data(lasttime):
     else:
         color = 3
     scr.addstr(3,DATCOL,str(delay),curses.color_pair(color))
-    scr.addnstr(4,DATCOL,str(acsdata.humidity),8)
-    scr.addnstr(5,DATCOL,str(acsdata.pressure),8)
-    scr.addnstr(6,DATCOL,str(acsdata.temperature1),8)
-    scr.addnstr(7,DATCOL,str(acsdata.temperature2),8)
-    scr.addnstr(8,DATCOL,str(acsdata.compass['x']),8)
-    scr.addnstr(8,DATCOL2,str(acsdata.compass['y']),8)
-    scr.addnstr(8,DATCOL3,str(acsdata.compass['z']),8)
-    scr.addnstr(9,DATCOL,str(acsdata.gyroscope['x']),8)
-    scr.addnstr(9,DATCOL2,str(acsdata.gyroscope['y']),8)
-    scr.addnstr(9,DATCOL3,str(acsdata.gyroscope['z']),8)
-    scr.addnstr(10,DATCOL,str(acsdata.accelerometer['x']),8)
-    scr.addnstr(10,DATCOL2,str(acsdata.accelerometer['y']),8)
-    scr.addnstr(10,DATCOL3,str(acsdata.accelerometer['z']),8)
+    scr.addstr(4,DATCOL,str(acsdata.gpstime))
+    scr.addstr(5,DATCOL,str(acsdata.latitude))
+    scr.addstr(6,DATCOL,str(acsdata.longitude))
+    scr.addstr(7,DATCOL,str(acsdata.latitude))
+    scr.addnstr(8,DATCOL,str(acsdata.humidity),8)
+    scr.addnstr(9,DATCOL,str(acsdata.pressure),8)
+    scr.addnstr(10,DATCOL,str(acsdata.temperature),8)
+    scr.addnstr(11,DATCOL,str(acsdata.compass['x']),8)
+    scr.addnstr(11,DATCOL2,str(acsdata.compass['y']),8)
+    scr.addnstr(11,DATCOL3,str(acsdata.compass['z']),8)
+    scr.addnstr(12,DATCOL,str(acsdata.gyroscope['x']),8)
+    scr.addnstr(12,DATCOL2,str(acsdata.gyroscope['y']),8)
+    scr.addnstr(12,DATCOL3,str(acsdata.gyroscope['z']),8)
+    scr.addnstr(13,DATCOL,str(acsdata.accelerometer['x']),8)
+    scr.addnstr(13,DATCOL2,str(acsdata.accelerometer['y']),8)
+    scr.addnstr(13,DATCOL3,str(acsdata.accelerometer['z']),8)
     accelmag = math.sqrt(acsdata.accelerometer['x']**2 + acsdata.accelerometer['y']**2 + acsdata.accelerometer['z']**2)
     if accelmag > 3:
         color = 5
@@ -46,7 +50,7 @@ def update_data(lasttime):
 	color = 4
     else:
         color = 3
-    scr.addnstr(10,DATACOL4,str(accelmag),8,curses.color_pair(color))
+    scr.addnstr(13,DATACOL4,str(accelmag),8,curses.color_pair(color))
     curses.curs_set(0)
     scr.refresh()
 
@@ -77,6 +81,7 @@ def update_leds():
 
 sense = SenseHat()
 sense.clear()
+gpsrec = gps.gps(mode=gps.WATCH_ENABLE)
 
 scr = curses.initscr()
 curses.start_color()
@@ -93,18 +98,20 @@ try:
     scr.addstr(2,LABCOL,"Time:",curses.color_pair(2))
     scr.addstr(3,LABCOL,"Delay:",curses.color_pair(2))
     scr.addstr(3,UNITCOL,"sec",curses.color_pair(2))
-    scr.addstr(4,LABCOL,"Humidity:",curses.color_pair(2))
-    scr.addstr(4,UNITCOL,"%",curses.color_pair(2))
-    scr.addstr(5,LABCOL,"Pressure:",curses.color_pair(2))
-    scr.addstr(5,UNITCOL,"mBar",curses.color_pair(2))
-    scr.addstr(6,LABCOL,"Temperature(H):",curses.color_pair(2))
-    scr.addstr(6,UNITCOL,"C",curses.color_pair(2))
-    scr.addstr(7,LABCOL,"Temperature(P):",curses.color_pair(2))
-    scr.addstr(7,UNITCOL,"C",curses.color_pair(2))
-    scr.addstr(8,LABCOL,"Compass Raw:",curses.color_pair(2))
-    scr.addstr(9,LABCOL,"Gyro Raw:",curses.color_pair(2))
-    scr.addstr(10,LABCOL,"Accel Raw:",curses.color_pair(2))
-    scr.addstr(10,LABCOL2,"Magn.:",curses.color_pair(2))
+    scr.addstr(4,LABCOL,"GPS Time:", curses.color_pair(2))
+    scr.addstr(5,LABCOL,"Latitude:", curses.color_pair(2))
+    scr.addstr(6,LABCOL,"Longitude:", curses.color_pair(2))
+    scr.addstr(7,LABCOL,"Altitude:", curses.color_pair(2))
+    scr.addstr(8,LABCOL,"Humidity:",curses.color_pair(2))
+    scr.addstr(8,UNITCOL,"%",curses.color_pair(2))
+    scr.addstr(9,LABCOL,"Pressure:",curses.color_pair(2))
+    scr.addstr(9,UNITCOL,"mBar",curses.color_pair(2))
+    scr.addstr(10,LABCOL,"Temperature:",curses.color_pair(2))
+    scr.addstr(10,UNITCOL,"C",curses.color_pair(2))
+    scr.addstr(11,LABCOL,"Compass Raw:",curses.color_pair(2))
+    scr.addstr(12,LABCOL,"Gyro Raw:",curses.color_pair(2))
+    scr.addstr(13,LABCOL,"Accel Raw:",curses.color_pair(2))
+    scr.addstr(13,LABCOL2,"Magn.:",curses.color_pair(2))
 
     lasttime = dt.now()
     starttime = lasttime
@@ -117,6 +124,10 @@ try:
 except Exception as e:
     print e.__doc__
     print e.message
+    sense.clear()
+    scr.clear()
+    scr.refresh()
+    curses.endwin()
 
 sense.clear()
 scr.clear()
